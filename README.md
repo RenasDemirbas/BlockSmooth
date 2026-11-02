@@ -39,6 +39,9 @@ live, every export contains it, and the `.bbmodel` keeps the cage you can keep e
   subdivided mesh with smooth normals split at sharp edges. The `.bbmodel` keeps the cage.
 - **Textures stay put.** UVs are interpolated linearly inside each cage face, so a painted texture,
   pixel art included, lands where you painted it.
+- **Lean on the GPU and in files.** The viewport draws shared vertices: about one GPU vertex per
+  surface point instead of four per quad, 2.6–3.2× fewer. glTF exports are welded the same way.
+  OBJ and FBX exports share vertices too, and split them only where the shading is sharp.
 - **Apply** when you need the dense mesh itself. UVs, textures, bone weights, seams and sharp marks
   carry over.
 - **Scriptable.** `window.BlockSmooth` for scripts and other plugins. The
@@ -124,7 +127,8 @@ marks, keyed by edge the way Blockbench keys seams. It is saved in the `.bbmodel
 | **Exports contain the smooth mesh** | The mesh-capable codecs (`obj`, `fbx`, `collada`, `gltf`, `stl`) are wrapped at `compile()`, the one funnel every export path goes through. For the duration of the export, each mesh holds its subdivided data: vertices, faces, UVs, per-vertex normals split at sharp edges, and bone weights. Data-reading and scene-reading exporters alike therefore write the smooth mesh, with no format-specific code. |
 | **The cage is never lost** | After an export, the original vertex and face objects are put back by reference, not copied field by field. The `.bbmodel` codec (save and auto-backup) always runs with the cages swapped in, even while an async glTF export is still running. If one mesh fails to bake, it is exported as its cage, the export goes on, and a message says so. |
 | **An error never breaks Blockbench** | Every hook is isolated. A failing display is torn down and the plain mesh shows again. Before installing anything, the plugin checks for the Blockbench APIs it needs. On unload it removes everything in reverse order; the mesh data stays. |
-| **Fast enough to drag vertices** | Subdivision is built once per topology or settings change as sparse linear maps. A drag or an animation frame only re-applies them and re-solves normals into reused buffers. On a 2048-face cage this adds about 17 ms per update at level 2 (32k faces) and about 50 ms at level 3 (129k faces). Deep stacks are capped at 400k faces in the viewport and 1.5M in exports. |
+| **Fast enough to drag vertices** | Subdivision is built once per topology or settings change as sparse linear maps. A drag or an animation frame only re-applies them and re-solves normals into reused buffers. On a 2048-face cage this adds about 15 ms per update at level 2 (32k faces) and about 42 ms at level 3 (129k faces). Deep stacks are capped at 400k faces in the viewport and 1.5M in exports. |
+| **Few vertices** | The viewport mesh is indexed. A vertex is shared by every corner on the same surface point, normal fan and cage face, which is the most that can be shared without changing UVs, materials or the selected-face highlight. If a bend turns a smooth-by-angle edge sharp, the sharing is rebuilt for that frame. glTF exports get a welded copy of each baked mesh: bit-identical vertices merged, with triangles and material groups unchanged. The copy exists only while the exporter reads the scene. |
 | **Files from anywhere** | Stored data is validated and clamped on every read. Modifiers from a newer version are kept, not lost, and are ignored. |
 
 <details>
@@ -135,6 +139,8 @@ marks, keyed by edge the way Blockbench keys seams. It is saved in the `.bbmodel
   use the same Catmull-Clark rules. Lower the crease (around 0.3) or add a support loop.
 - **Collada:** Blockbench's Collada exporter writes one normal per face. The exported surface is
   subdivided but shades faceted. OBJ, FBX and glTF keep smooth normals.
+- **Skinned glTF is not welded.** Blockbench writes meshes inside an armature as skinned meshes with
+  one vertex per face corner, matching its per-corner skin weights.
 - **Painting** lands where the ray hits the cage, then shows on the smooth surface at the same UV. On
   coarse cages the brush can look slightly offset from the cursor.
 - **Weight painting** (Weight Brush and the vertex-weight view modes) shows the cage, because weights

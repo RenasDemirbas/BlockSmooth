@@ -9,7 +9,8 @@ import { getData, hasData } from './property';
 import { quickSignature, readCage, readDisplayUVs, type Cage } from './cage';
 import { SmoothDisplay } from './display';
 import { faceSlots, hideSurface, isTwin } from './materials';
-import { buildSurface, evaluate, planFor, surfaceKey, type Surface } from './surface';
+import { buildSurface, evaluate, planFor, surfaceKey, type Evaluated, type Surface } from './surface';
+import { shareCorners, sharingFits, type CornerSharing } from '../core/sharing';
 
 export interface Aspects {
   geometry?: boolean;
@@ -23,6 +24,8 @@ export const ALL_ASPECTS: Aspects = { geometry: true, uv: true, faces: true, hig
 interface DisplayRecord {
   readonly display: SmoothDisplay;
   surface: Surface | null;
+  /** Vertex sharing of the display, built for this record's surface. */
+  sharing: CornerSharing | null;
   /** What Blockbench last assigned to the cage, before it was hidden. */
   material: any;
   slots: Int32Array | null;
@@ -62,6 +65,7 @@ export class DisplayController {
     if (!rec?.surface || this.suspended.has(mesh.uuid)) return;
     try {
       const ev = evaluate(rec.surface, mesh, offsets);
+      if (this.layOut(rec, ev)) this.writeAppearance(rec, mesh);
       rec.display.writeSurface(ev.positions, ev.normals.normals);
     } catch (err) {
       report('deformation update', err, mesh.name);
@@ -159,26 +163,25 @@ export class DisplayController {
     }
 
     if (!rec) {
-      rec = { display: new SmoothDisplay(mesh.uuid), surface: null, material: null, slots: null };
+      rec = { display: new SmoothDisplay(mesh.uuid), surface: null, sharing: null, material: null, slots: null };
       this.records.set(mesh.uuid, rec);
     }
     let all = false;
     if (rec.surface?.key !== surfaceKey(cage, data, plan)) {
       rec.surface = buildSurface(mesh, data, 'viewport', cage);
-      rec.display.setTopology(rec.surface.hierarchy.final);
+      rec.sharing = null;
       all = true;
     }
     const surface = rec.surface;
     const { display } = rec;
 
-    if (all || aspects.geometry) {
+    let relaid = false;
+    if (all || aspects.geometry || !display.sharing) {
       const ev = evaluate(surface, mesh, offsets);
+      relaid = this.layOut(rec, ev);
       display.writeSurface(ev.positions, ev.normals.normals);
     }
-    if (all || aspects.uv) {
-      // Read from the cage's own uv buffer: already normalized, flipped and frame-adjusted by Blockbench.
-      display.writeUVs(surface.corners.run(readDisplayUVs(mesh, surface.cage)));
-    }
+    if (all || relaid || aspects.uv) this.writeUVs(rec, mesh);
     // The cage holds real materials only right after Blockbench's updateFaces; once
     // hidden it holds twins. Never mistake twins for the real thing: if we have
     // no real material yet, let Blockbench assign them again first.
@@ -189,16 +192,46 @@ export class DisplayController {
       rec.slots = faceSlots(surface.cage.bbIndexStart, object);
       materialsChanged = true;
     }
-    if (all || materialsChanged) {
-      const slots = rec.slots && rec.slots.length === surface.cage.topology.faceCount ? rec.slots : null;
-      const material = Array.isArray(rec.material) && !slots ? rec.material[0] : rec.material;
-      display.writeMaterials(material, surface.hierarchy.faceOrigin, slots);
-    }
-    if (all || aspects.highlight || materialsChanged) {
-      display.writeHighlight(surface.hierarchy.faceOrigin, readCageHighlight(object, surface.cage));
+    if (all || relaid || materialsChanged) this.writeMaterials(rec);
+    if (all || relaid || aspects.highlight || materialsChanged) {
+      display.writeHighlight(readCageHighlight(object, surface.cage));
     }
     hideSurface(object);
     display.attach(object);
+  }
+
+  /**
+   * (Re)build the display's vertex sharing when there is none or it no longer
+   * fits the normal fans (a smooth-by-angle edge turned sharp while deforming).
+   * Returns true when the buffers were rebuilt and need every attribute again.
+   */
+  private layOut(rec: DisplayRecord, ev: Evaluated): boolean {
+    const { display, surface } = rec;
+    const current = display.sharing;
+    if (current && current === rec.sharing && sharingFits(current, ev.normals.fan)) return false;
+    const final = surface!.hierarchy.final;
+    rec.sharing = shareCorners(final, surface!.hierarchy.faceOrigin, ev.normals.fan, ev.normals.fanCount);
+    display.setLayout(final, surface!.hierarchy.faceOrigin, rec.sharing);
+    return true;
+  }
+
+  private writeUVs(rec: DisplayRecord, mesh: any): void {
+    // Read from the cage's own uv buffer: already normalized, flipped and frame-adjusted by Blockbench.
+    rec.display.writeUVs(rec.surface!.corners.run(readDisplayUVs(mesh, rec.surface!.cage)));
+  }
+
+  private writeMaterials(rec: DisplayRecord): void {
+    const faces = rec.surface!.cage.topology.faceCount;
+    const slots = rec.slots && rec.slots.length === faces ? rec.slots : null;
+    const material = Array.isArray(rec.material) && !slots ? rec.material[0] : rec.material;
+    rec.display.writeMaterials(material, slots);
+  }
+
+  /** Everything but positions and normals, after a relayout outside a full sync. */
+  private writeAppearance(rec: DisplayRecord, mesh: any): void {
+    this.writeUVs(rec, mesh);
+    if (rec.material) this.writeMaterials(rec);
+    rec.display.writeHighlight(readCageHighlight(mesh.mesh, rec.surface!.cage));
   }
 
   /** Let Blockbench reassign the cage's real materials, without reacting to it ourselves. */

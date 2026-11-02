@@ -5,14 +5,25 @@
 //
 // If baking fails the export still happens, without modifiers: a broken
 // export is worse than an unsmoothed one.
+//
+// glTF without armature additionally gets welded geometry: Blockbench builds
+// one vertex per face corner, the welded copy one per distinct vertex.
 
 import { guarded, report } from '../util/guard';
 import { Lifecycle, patchMethod, type Deletable } from '../util/lifecycle';
 import type { DisplayController } from '../bb/controller';
 import { BakeSession } from './session';
+import { weldDuringParse } from './gltfweld';
 
 /** Codecs that write mesh geometry: OBJ, FBX, Collada (mesh data) and glTF, STL (three.js scene). */
 export const MESH_CODECS = ['obj', 'fbx', 'collada', 'gltf', 'stl'];
+
+/** The options a codec's compile() will use: its saved export options with the call's own on top. */
+function exportOptions(codec: any, given: any): Record<string, any> {
+  let saved: Record<string, any> = {};
+  try { saved = codec.getExportOptions?.() ?? {}; } catch { /* older codecs */ }
+  return Object.assign({}, saved, given && typeof given === 'object' ? given : {});
+}
 
 export function installExportHooks(controller: DisplayController, applyOnExport: () => boolean): Deletable {
   const life = new Lifecycle();
@@ -26,7 +37,13 @@ export function installExportHooks(controller: DisplayController, applyOnExport:
         Blockbench.showQuickMessage?.('BlockSmooth: exporting without modifiers (see console)', 3000);
       });
       if (!session) return original.apply(this, args);
-      const end = () => guarded('ending export bake', () => session.end());
+      // Skinned glTF pairs skin weights with Blockbench's per-corner vertices: never weld it.
+      const weld = id === 'gltf' && !exportOptions(this, args[0]).armature
+        ? guarded('preparing glTF welding', () => weldDuringParse(session)) : null;
+      const end = () => {
+        guarded('ending glTF welding', () => weld?.delete());
+        guarded('ending export bake', () => session.end());
+      };
       let result: any;
       try {
         result = original.apply(this, args);

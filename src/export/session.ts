@@ -79,6 +79,11 @@ export class BakeSession {
     this.swapOut();
   }
 
+  /** The meshes currently holding baked data. */
+  bakedMeshes(): any[] {
+    return this.swappedIn ? this.swaps.map((s) => s.mesh) : [];
+  }
+
   /** Run fn with every cage temporarily restored (fn must be synchronous). */
   withCage<T>(fn: () => T): T {
     if (!this.swappedIn) return fn();
