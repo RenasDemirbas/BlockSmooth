@@ -1,0 +1,16 @@
+name: Feature request
+description: A new modifier, an option, or support for an export format or workflow.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: What do you want to make?
+      description: Describe the result you are after, not only the feature you imagine.
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: What happens today
+      description: Where BlockSmooth falls short or gets in the way.

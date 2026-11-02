@@ -1,0 +1,34 @@
+name: Bug report
+description: Wrong surface, a broken export, an error, or Blockbench misbehaving with the plugin loaded.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did (modifier, crease, export format...) and what went wrong.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: Steps, ideally with a small .bbmodel attached (zip it if GitHub refuses the file).
+  - type: input
+    id: versions
+    attributes:
+      label: BlockSmooth, Blockbench and OS versions
+      placeholder: BlockSmooth 1.0.0, Blockbench 5.2.2, Windows 11
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output or screenshots
+      description: Blockbench console (Ctrl+Shift+I), lines starting with [BlockSmooth].

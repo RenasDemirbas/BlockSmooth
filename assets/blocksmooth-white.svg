@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">BlockSmooth logo</title>
+  <!-- Isometric block (edge 104) with its top-right edge rounded: the blocky cage and the smooth surface BlockSmooth makes of it. Same projection and palette as the Blockbench MCP mark; the accent is on the curve. One colour: faces separated by real gaps. -->
+  <g id="symbol">
+    <path fill="#FFFFFF" d="M128.00 22.00 L171.30 47.00 L82.97 98.00 L39.67 73.00 Z"/>
+    <path fill="#FFFFFF" d="M37.93 76.00 L82.97 102.00 C106.88 115.81 126.27 149.39 126.27 177.00 L126.27 229.00 L37.93 178.00 Z"/>
+    <path fill="#FFFFFF" d="M218.07 178.00 L218.07 128.00 L129.73 179.00 L129.73 229.00 Z"/>
+    <path fill="#FFFFFF" d="M86.43 100.04 C109.94 114.66 128.79 147.31 129.70 174.98 L218.03 123.98 C217.13 96.31 198.28 63.66 174.76 49.04 Z"/>
+  </g>
+</svg>

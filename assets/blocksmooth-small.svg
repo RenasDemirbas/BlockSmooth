@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">BlockSmooth logo (small sizes)</title>
+  <!-- Small-size cut: larger block and a rounder edge so the curve reads at 16-32 px. -->
+  <g id="symbol">
+    <path fill="#9C9CFF" d="M128.00 18.00 L173.03 44.00 L77.77 99.00 L32.74 73.00 Z"/>
+    <path fill="#6464E0" d="M32.74 73.00 L77.77 99.00 C105.51 115.02 128.00 153.97 128.00 186.00 L128.00 238.00 L32.74 183.00 Z"/>
+    <path fill="#4343B5" d="M223.26 183.00 L223.26 131.00 L128.00 186.00 L128.00 238.00 Z"/>
+    <path fill="#F59B23" d="M77.77 99.00 C105.51 115.02 128.00 153.97 128.00 186.00 L223.26 131.00 C223.26 98.97 200.77 60.02 173.03 44.00 Z"/>
+  </g>
+</svg>

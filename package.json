@@ -1,0 +1,20 @@
+{
+  "name": "blocksmooth",
+  "version": "1.0.0",
+  "description": "Blockbench plugin: non-destructive subdivision surfaces, edge creases and smooth-by-angle shading for meshes, applied automatically on export",
+  "license": "GPL-3.0-or-later",
+  "private": true,
+  "type": "module",
+  "author": "Renas Demirbas",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:release": "node scripts/build.mjs --release",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/test.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0"
+  }
+}

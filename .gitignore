@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.test-build/
+
+*.log
+.DS_Store
+Thumbs.db
+
+# Assistant tooling (kept out of the repository)
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+docs/superpowers/
